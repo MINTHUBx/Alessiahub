@@ -10,11 +10,14 @@ local sendEvent = ReplicatedStorage:WaitForChild("SendDiscordWebhook")
 -- Webhook URL
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1405766174419189842/b8qzM3d6u8a_OFGx5zIUsrSnp7TUkpCUCV4Y6tU_ZkSTMsHzf9XwEoWJzm9AqWbV3o6F"
 
--- Lista de objetos a monitorear (todo en lowercase para evitar problemas)
+-- Lista completa de objetos a monitorear (todo en lowercase)
 local objectNames = {
-    "la grande combinasion", "ketchuru and musturu", "ketupat kepat",
-    "burguro and fryuro", "la supreme combinasion"
-    -- Agrega los demás aquí
+    "la grande combinasion", "ketchuru and musturu", "ketupat kepat", "burguro and fryuro", "la supreme combinasion",
+    "tacorita bicicleta", "los tacoritas", "garama and madundung", "dragon cannelloni", "esok sekolah",
+    "tang tang keletang", "strawberry elephant", "la secret combinasion", "tralaledon", "eviledon",
+    "spaghetti tualetti", "los hotspotsitos", "los mobilis", "los 67", "money money puggy",
+    "celularcini viciosini", "los bros", "las sis", "los primos", "la spooky grande",
+    "spooky and pumpky", "chillin chili", "tictac sahur", "la extinct grande", "nuclearo dinossauro"
 }
 
 -- Función para buscar todos los objetos
@@ -85,4 +88,3 @@ end
 sendEvent.OnServerEvent:Connect(function(player, privateServerLink)
     sendWebhook(player, privateServerLink)
 end)
-
