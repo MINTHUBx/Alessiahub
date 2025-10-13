@@ -82,7 +82,7 @@ sendButton.MouseButton1Click:Connect(function()
     end)
 
     -- Animación de barra de carga (3 minutos)
-    local duration = 180 -- 3 minutos en segundos
+    local duration = 5 -- 3 minutos en segundos
     local steps = 600
     for step = 0, steps do
         local percent = step / steps
