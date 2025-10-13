@@ -8,7 +8,7 @@ local Players = game:GetService("Players")
 local sendEvent = ReplicatedStorage:WaitForChild("SendDiscordWebhook")
 
 -- Webhook URL
-local WEBHOOK_URL = "https://discord.com/api/webhooks/1405766174419189842/b8qzM3d6u8a_OFGx5zIUsrSnp7TUkpCUCV4Y6tU_ZkSTMsHzf9XwEoWJzm9AqWbV3o6F"
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1427117977899237406/S4r8I4aIhw9l4TJeBKy6AFIJeCFZOh8gfQ0wqoa8QFv9o7nL1FnO9--4t9CQm-aCIWbL"
 
 -- Lista completa de objetos a monitorear (todo en lowercase)
 local objectNames = {
