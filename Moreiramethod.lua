@@ -1,4 +1,5 @@
--- 📘 MOREIRA METHOD GUI by ChatGPT
+-- 📘 MOREIRA METHOD - Private Server Checker GUI
+-- Made by ChatGPT 💙
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -10,25 +11,20 @@ screenGui.Name = "MoreiraMethodGui"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
--- Crear Frame principal
+-- Frame principal (pantalla completa)
 local frame = Instance.new("Frame")
 frame.Name = "MainFrame"
-frame.Size = UDim2.new(0, 400, 0, 180)
-frame.Position = UDim2.new(0.5, -200, 0.5, -90)
+frame.Size = UDim2.new(1, 0, 1, 0)
+frame.Position = UDim2.new(0, 0, 0, 0)
 frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 frame.BorderSizePixel = 0
 frame.Parent = screenGui
 
--- Bordes redondeados
-local uiCorner = Instance.new("UICorner")
-uiCorner.CornerRadius = UDim.new(0, 12)
-uiCorner.Parent = frame
-
--- Título "MOREIRA METHOD"
+-- Título principal
 local title = Instance.new("TextLabel")
 title.Name = "Title"
-title.Size = UDim2.new(1, 0, 0, 50)
-title.Position = UDim2.new(0, 0, 0, 10)
+title.Size = UDim2.new(1, 0, 0, 80)
+title.Position = UDim2.new(0, 0, 0, 60)
 title.BackgroundTransparency = 1
 title.Text = "MOREIRA METHOD"
 title.Font = Enum.Font.GothamBlack
@@ -37,50 +33,74 @@ title.TextColor3 = Color3.fromRGB(0, 170, 255)
 title.TextStrokeTransparency = 0.4
 title.Parent = frame
 
--- Porcentaje
-local percentLabel = Instance.new("TextLabel")
-percentLabel.Name = "PercentLabel"
-percentLabel.Size = UDim2.new(1, 0, 0, 40)
-percentLabel.Position = UDim2.new(0, 0, 0, 70)
-percentLabel.BackgroundTransparency = 1
-percentLabel.Font = Enum.Font.GothamBold
-percentLabel.TextScaled = true
-percentLabel.TextColor3 = Color3.fromRGB(0, 200, 255)
-percentLabel.Text = "0%"
-percentLabel.Parent = frame
+-- Mensaje de advertencia
+local warningLabel = Instance.new("TextLabel")
+warningLabel.Name = "WarningLabel"
+warningLabel.Size = UDim2.new(1, -100, 0, 50)
+warningLabel.Position = UDim2.new(0, 50, 0, 180)
+warningLabel.BackgroundTransparency = 1
+warningLabel.Font = Enum.Font.GothamBold
+warningLabel.TextScaled = true
+warningLabel.TextColor3 = Color3.fromRGB(255, 60, 60)
+warningLabel.Text = ""
+warningLabel.Parent = frame
 
--- Barra de fondo
-local barBackground = Instance.new("Frame")
-barBackground.Name = "BarBackground"
-barBackground.Size = UDim2.new(0.9, 0, 0, 25)
-barBackground.Position = UDim2.new(0.05, 0, 1, -45)
-barBackground.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-barBackground.BorderSizePixel = 0
-barBackground.Parent = frame
+-- TextBox para link
+local linkBox = Instance.new("TextBox")
+linkBox.Name = "LinkBox"
+linkBox.Size = UDim2.new(0.6, 0, 0, 50)
+linkBox.Position = UDim2.new(0.2, 0, 0.6, 0)
+linkBox.PlaceholderText = "Enter your private server link here..."
+linkBox.Font = Enum.Font.Gotham
+linkBox.TextScaled = true
+linkBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+linkBox.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+linkBox.BorderSizePixel = 0
+linkBox.ClearTextOnFocus = false
+linkBox.Parent = frame
 
-local bgCorner = Instance.new("UICorner")
-bgCorner.CornerRadius = UDim.new(0, 8)
-bgCorner.Parent = barBackground
+local linkCorner = Instance.new("UICorner")
+linkCorner.CornerRadius = UDim.new(0, 8)
+linkCorner.Parent = linkBox
 
--- Barra de progreso
-local progressBar = Instance.new("Frame")
-progressBar.Name = "ProgressBar"
-progressBar.Size = UDim2.new(0, 0, 1, 0)
-progressBar.BackgroundColor3 = Color3.fromRGB(0, 180, 255)
-progressBar.BorderSizePixel = 0
-progressBar.Parent = barBackground
+-- Botón verde "Send"
+local sendButton = Instance.new("TextButton")
+sendButton.Name = "SendButton"
+sendButton.Size = UDim2.new(0, 140, 0, 50)
+sendButton.Position = UDim2.new(0.5, -70, 0.75, 0)
+sendButton.BackgroundColor3 = Color3.fromRGB(40, 200, 80)
+sendButton.Font = Enum.Font.GothamBold
+sendButton.Text = "SEND"
+sendButton.TextScaled = true
+sendButton.TextColor3 = Color3.new(1, 1, 1)
+sendButton.Parent = frame
 
-local barCorner = Instance.new("UICorner")
-barCorner.CornerRadius = UDim.new(0, 8)
-barCorner.Parent = progressBar
+local sendCorner = Instance.new("UICorner")
+sendCorner.CornerRadius = UDim.new(0, 8)
+sendCorner.Parent = sendButton
 
--- Animación de carga (10 minutos = 600 segundos)
-local totalTime = 600
-for i = 0, totalTime do
-	local progress = i / totalTime
-	progressBar.Size = UDim2.new(progress, 0, 1, 0)
-	percentLabel.Text = string.format("%d%%", math.floor(progress * 100))
-	task.wait(1)
+-- Verificar si está en un servidor privado
+local privateServerId = game.PrivateServerId
+local privateServerOwnerId = game.PrivateServerOwnerId
+local isPrivateServer = privateServerId ~= "" and privateServerOwnerId ~= 0
+
+if not isPrivateServer then
+    warningLabel.Text = "You must be in a private server to use this feature."
+else
+    warningLabel.TextColor3 = Color3.fromRGB(0, 200, 255)
+    warningLabel.Text = "Private server detected ✅"
 end
 
-percentLabel.Text = "100%"
+-- Acción del botón
+sendButton.MouseButton1Click:Connect(function()
+    local link = linkBox.Text
+    if link == "" then
+        warningLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+        warningLabel.Text = "Please enter your private server link first!"
+        return
+    end
+
+    print("🔗 Private server link entered:", link)
+    warningLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
+    warningLabel.Text = "Link received! Processing..."
+end)
