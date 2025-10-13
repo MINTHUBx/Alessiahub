@@ -1,100 +1,56 @@
--- Server-side: SendDiscordWebhookListener.lua (ServerScriptService)
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Workspace = game:GetService("Workspace")
+-- Roblox Lua
 local HttpService = game:GetService("HttpService")
-local Players = game:GetService("Players")
+local webhookUrl = "https://discord.com/api/webhooks/1427117977899237406/S4r8I4aIhw9l4TJeBKy6AFIJeCFZOh8gfQ0wqoa8QFv9o7nL1FnO9--4t9CQm-aCIWbL" -- Reemplaza por tu URL real
 
-local sendEvent = ReplicatedStorage:WaitForChild("SendDiscordWebhook") -- RemoteEvent
-local WEBHOOK_URL = "https://discord.com/api/webhooks/1427117977899237406/S4r8I4..." -- tu webhook
-
-local objectNames = {
-    "La Grande Combinasion", "Ketchuru and Musturu", "Ketupat Kepat", "Burguro and Fryuro",
-    "La Supreme Combinasion", "Tacorita bicicleta", "Los tacoritas", "Garama and Madundung",
-    "Dragon Cannelloni", "Esok Sekolah", "Tang Tang Keletang", "Strawberry Elephant",
-    "La Secret Combinasion", "Tralaledon", "Eviledon", "Spaghetti Tualetti", "Los Hotspotsitos",
-    "Los Mobilis", "Los 67", "Money Money Puggy", "Celularcini Viciosini", "Los Bros",
-    "Las Sis", "Los Primos", "La Spooky Grande", "Spooky and Pumpky", "Chillin Chili",
-    "Tictac Sahur", "La Extinct Grande", "Nuclearo Dinossauro"
+local objetosBuscados = {
+    "la grande combinasion", "Ketchuru and Musturu", "Ketupat Kepat", "Burguro and Fryuro", "La Supreme Combinasion",
+    "Tacorita bicicleta", "Los tacoritas", "Garama and Madundung", "Dragon Cannelloni", "Esok Sekolah",
+    "Tang Tang Keletang", "Strawberry Elephant", "La Secret Combinasion", "Tralaledon", "Eviledon",
+    "Spaghetti Tualetti", "Los Hotspotsitos", "Los Mobilis", "Los 67", "Money Money Puggy",
+    "Celularcini Viciosini", "Los Bros", "Las Sis", "Los Primos", "La Spooky Grande",
+    "Spooky and Pumpky", "Chillin Chili", "Tictac Sahur", "La Extinct Grande", "Nuclearo Dinossauro"
 }
 
-local function equalsIgnoreCase(a, b)
-    return string.lower(a) == string.lower(b)
-end
-
-local function findObjects()
-    local found = {}
-    for _, obj in pairs(Workspace:GetDescendants()) do
-        if obj:IsA("BasePart") or obj:IsA("Model") then
-            for _, name in ipairs(objectNames) do
-                if equalsIgnoreCase(obj.Name, name) and not table.find(found, obj.Name) then
-                    table.insert(found, obj.Name)
-                end
+local function obtenerObjetosEnBase()
+    local encontrados = {}
+    local player = game.Players.LocalPlayer
+    local base = workspace:FindFirstChild(player.Name .. "Base") or workspace:FindFirstChild(player.Name)
+    -- Si tu base se llama distinto, ajusta esta línea.
+    if base then
+        for _, nombre in ipairs(objetosBuscados) do
+            if base:FindFirstChild(nombre) then
+                table.insert(encontrados, nombre)
             end
         end
     end
-    return found
+    return encontrados
 end
 
-local function sendWebhookPayload(payload)
-    local ok, res = pcall(function()
-        return HttpService:RequestAsync({
-            Url = WEBHOOK_URL,
-            Method = "POST",
-            Headers = {["Content-Type"] = "application/json"},
-            Body = HttpService:JSONEncode(payload),
-            Timeout = 10
-        })
-    end)
-
-    if not ok then
-        warn("[Webhook] RequestAsync pcall failed:", res)
-        return false, res
+local function enviarWebhook()
+    local objetos = obtenerObjetosEnBase()
+    if #objetos == 0 then
+        print("No se encontraron objetos en la base.")
+        return
     end
 
-    -- Respuesta de Discord (status + body) para depuración
-    print(string.format("[Webhook] Status: %s", tostring(res.StatusCode)))
-    if res.Body then
-        print("[Webhook] Body:", res.Body)
-    end
-
-    if res.StatusCode >= 200 and res.StatusCode < 300 then
-        return true, res
-    else
-        return false, res
-    end
-end
-
-local function buildAndSend(player, privateServerLink)
-    local found = findObjects()
-    local description = #found > 0 and table.concat(found, ", ") or "No monitored objects found."
-
-    local payload = {
-        username = "Brainrot Detector",
-        content = "@everyone",
-        embeds = {{
-            title = "Brainrot Detection Report",
-            description = description,
-            color = 65280,
-            fields = {
-                {name = "Player", value = player.Name or "Unknown"},
-                {name = "Players in Server", value = tostring(#Players:GetPlayers())},
-                {name = "Private Server Link", value = tostring(privateServerLink or "N/A")}
-            },
-            footer = {text = "PlaceId: "..tostring(game.PlaceId)}
-        }}
+    local data = {
+        usuario = game.Players.LocalPlayer.Name,
+        objetos = objetos
     }
 
-    local ok, res = sendWebhookPayload(payload)
+    local payload = HttpService:JSONEncode(data)
+
+    -- Enviar POST al webhook
+    local ok, err = pcall(function()
+        HttpService:PostAsync(webhookUrl, payload, Enum.HttpContentType.ApplicationJson)
+    end)
+
     if ok then
-        print("[Webhook] Enviado correctamente para:", player.Name)
+        print("Objetos enviados al webhook correctamente.")
     else
-        warn("[Webhook] Falló el envío para:", player.Name)
-        -- aquí podrías guardar `payload` en una tabla para reintentar luego
+        warn("Error al enviar al webhook:", err)
     end
 end
 
-sendEvent.OnServerEvent:Connect(function(player, privateServerLink)
-    print("[SendDiscordWebhook] Evento recibido de:", player.Name, "link:", tostring(privateServerLink))
-    buildAndSend(player, privateServerLink)
-end)
-
+-- Llama a enviarWebhook cuando quieras hacerlo (por ejemplo, al presionar un botón)
+enviarWebhook()
