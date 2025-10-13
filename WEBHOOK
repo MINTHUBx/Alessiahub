@@ -1,61 +1,20 @@
--- 📘 MOREIRA METHOD - Envío de objetos + servidor privado al webhook
-local HttpService = game:GetService("HttpService")
-local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
+-- 📘 MOREIRA METHOD - LocalScript para enviar datos al servidor
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
 
--- 🔗 Webhook de Discord
-local WEBHOOK_URL = "https://discord.com/api/webhooks/1405766174419189842/b8qzM3d6u8a_OFGx5zIUsrSnp7TUkpCUCV4Y6tU_ZkSTMsHzf9XwEoWJzm9AqWbV3o6F"
+-- Esperar a que el RemoteEvent esté disponible
+local SendDiscordWebhook = ReplicatedStorage:WaitForChild("SendDiscordWebhook")
 
--- Evento remoto para que el LocalScript pueda enviar datos al servidor
-local SendDiscordWebhook = Instance.new("RemoteEvent")
-SendDiscordWebhook.Name = "SendDiscordWebhook"
-SendDiscordWebhook.Parent = ReplicatedStorage
+-- Obtener el jugador local
+local player = Players.LocalPlayer
 
--- Lista de objetos a monitorear
-local objectNames = {
-    "la grande combinasion", "Ketchuru and Musturu", "Ketupat Kepat", "Burguro and Fryuro", "La Supreme Combinasion",
-    "Tacorita bicicleta", "Los tacoritas", "Garama and Madundung", "Dragon Cannelloni", "Esok Sekolah",
-    "Tang Tang Keletang", "Strawberry Elephant", "La Secret Combinasion", "Tralaledon", "Eviledon",
-    "Spaghetti Tualetti", "Los Hotspotsitos", "Los Mobilis", "Los 67", "Money Money Puggy",
-    "Celularcini Viciosini", "Los Bros", "Las Sis", "Los Primos", "La Spooky Grande",
-    "Spooky and Pumpky", "Chillin Chili", "Tictac Sahur", "La Extinct Grande", "Nuclearo Dinossauro"
-}
+-- Obtener el link del servidor privado (puedes personalizar esto)
+local privateServerLink = "https://www.roblox.com/games/1234567890?privateServerLinkCode=ABCDEF"
 
--- Función para buscar objetos en Workspace
-local function findObjects()
-    local found = {}
-    for _, name in ipairs(objectNames) do
-        local obj = Workspace:FindFirstChild(name, true)
-        if obj then
-            table.insert(found, name)
-        end
-    end
-    return found
-end
+-- Esperar unos segundos para asegurar que todo esté cargado
+wait(5)
 
--- Conexión del RemoteEvent
-SendDiscordWebhook.OnServerEvent:Connect(function(player, privateServerLink)
-    -- Buscar objetos
-    local objectsFound = findObjects()
-    
-    -- Crear mensaje
-    local message
-    if #objectsFound == 0 then
-        message = player.Name .. " is in server: " .. privateServerLink .. "\nNo monitored objects were found in the base."
-    else
-        message = player.Name .. " is in server: " .. privateServerLink .. "\nObjects found: " .. table.concat(objectsFound, ", ")
-    end
+-- Enviar el evento al servidor
+SendDiscordWebhook:FireServer(privateServerLink)
 
-    -- Enviar al webhook
-    local data = {["content"] = message}
-    local jsonData = HttpService:JSONEncode(data)
-    local success, err = pcall(function()
-        HttpService:PostAsync(WEBHOOK_URL, jsonData, Enum.HttpContentType.ApplicationJson)
-    end)
-    if not success then
-        warn("Error sending to webhook:", err)
-    else
-        print("Webhook sent successfully for player:", player.Name)
-    end
-end)
+print("🔔 Webhook disparado desde el cliente para:", player.Name)
