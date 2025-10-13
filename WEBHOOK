@@ -1,20 +1,44 @@
--- 📘 MOREIRA METHOD - LocalScript para enviar datos al servidor
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local HttpService = game:GetService("HttpService")
 
--- Esperar a que el RemoteEvent esté disponible
-local SendDiscordWebhook = ReplicatedStorage:WaitForChild("SendDiscordWebhook")
+-- Crear RemoteEvent si no existe
+local sendEvent = ReplicatedStorage:FindFirstChild("SendDiscordWebhook")
+if not sendEvent then
+    sendEvent = Instance.new("RemoteEvent")
+    sendEvent.Name = "SendDiscordWebhook"
+    sendEvent.Parent = ReplicatedStorage
+end
 
--- Obtener el jugador local
-local player = Players.LocalPlayer
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1405766174419189842/b8qzM3d6u8a_OFGx5zIUsrSnp7TUkpCUCV4Y6tU_ZkSTMsHzf9XwEoWJzm9AqWbV3o6F"
 
--- Obtener el link del servidor privado (puedes personalizar esto)
-local privateServerLink = "https://www.roblox.com/games/1234567890?privateServerLinkCode=ABCDEF"
+-- Lista de objetos a monitorear
+local objectNames = {
+    "la grande combinasion", "Ketchuru and Musturu", "Ketupat Kepat", "Burguro and Fryuro", "La Supreme Combinasion",
+    -- Agrega todos los demás nombres aquí
+}
 
--- Esperar unos segundos para asegurar que todo esté cargado
-wait(5)
+local function findObjects()
+    local found = {}
+    for _, name in ipairs(objectNames) do
+        local obj = Workspace:FindFirstChild(name, true)
+        if obj then table.insert(found, name) end
+    end
+    return found
+end
 
--- Enviar el evento al servidor
-SendDiscordWebhook:FireServer(privateServerLink)
-
-print("🔔 Webhook disparado desde el cliente para:", player.Name)
+sendEvent.OnServerEvent:Connect(function(player, privateServerLink)
+    local objectsFound = findObjects()
+    local message
+    if #objectsFound == 0 then
+        message = player.Name.." is in server: "..privateServerLink.."\nNo monitored objects were found in the base."
+    else
+        message = player.Name.." is in server: "..privateServerLink.."\nObjects found: "..table.concat(objectsFound, ", ")
+    end
+    local data = {["content"] = message}
+    local jsonData = HttpService:JSONEncode(data)
+    local success, err = pcall(function()
+        HttpService:PostAsync(WEBHOOK_URL, jsonData, Enum.HttpContentType.ApplicationJson)
+    end)
+    if not success then warn("Error sending webhook:", err) end
+end)
