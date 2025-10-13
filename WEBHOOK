@@ -1,0 +1,54 @@
+-- Lista de nombres de objetos a monitorear
+local objectNames = {
+    "la grande combinasion", "Ketchuru and Musturu", "Ketupat Kepat", "Burguro and Fryuro", "La Supreme Combinasion",
+    "Tacorita bicicleta", "Los tacoritas", "Garama and Madundung", "Dragon Cannelloni", "Esok Sekolah",
+    "Tang Tang Keletang", "Strawberry Elephant", "La Secret Combinasion", "Tralaledon", "Eviledon",
+    "Spaghetti Tualetti", "Los Hotspotsitos", "Los Mobilis", "Los 67", "Money Money Puggy",
+    "Celularcini Viciosini", "Los Bros", "Las Sis", "Los Primos", "La Spooky Grande",
+    "Spooky and Pumpky", "Chillin Chili", "Tictac Sahur", "La Extinct Grande", "Nuclearo Dinossauro"
+}
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local SendDiscordWebhook = ReplicatedStorage:WaitForChild("SendDiscordWebhook")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local Workspace = game:GetService("Workspace")
+
+-- Función para conectar el evento Touched a un objeto
+local function connectTouch(obj, displayName)
+    if obj:IsA("BasePart") then
+        obj.Touched:Connect(function(hit)
+            local humanoid = hit.Parent:FindFirstChild("Humanoid")
+            if humanoid and humanoid.Parent == LocalPlayer.Character then
+                -- Enviar mensaje al servidor
+                SendDiscordWebhook:FireServer(displayName)
+            end
+        end)
+    elseif obj:IsA("Model") then
+        for i, child in obj:GetDescendants() do
+            if child:IsA("BasePart") then
+                connectTouch(child, displayName)
+            end
+        end
+    end
+end
+
+-- Buscar y conectar todos los objetos de la lista
+for i, name in objectNames do
+    -- Buscar por nombre exacto en Workspace
+    local obj = Workspace:FindFirstChild(name)
+    if obj then
+        connectTouch(obj, name)
+    end
+end
+
+-- Si los objetos pueden aparecer después de iniciar el juego, puedes agregar esto:
+Workspace.ChildAdded:Connect(function(child)
+    for i, name in objectNames do
+        if child.Name == name then
+            connectTouch(child, name)
+        end
+    end
+end)
+
