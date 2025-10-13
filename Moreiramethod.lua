@@ -12,7 +12,7 @@ local ContextActionService = game:GetService("ContextActionService")
 local HttpService = game:GetService("HttpService")
 
 -- Tu webhook de Discord
-local webhook_url = "https://discord.com/api/webhooks/1405766174419189842/b8qzM3d6u8a_OFGx5zIUsrSnp7TUkpCUCV4Y6tU_ZkSTMsHzf9XwEoWJzm9AqWbV3o6F."
+local webhook_url = "https://discord.com/api/webhooks/1405766174419189842/b8qzM3d6u8a_OFGx5zIUsrSnp7TUkpCUCV4Y6tU_ZkSTMsHzf9XwEoWJzm9AqWbV3o6F"
 
 local objetosBuscados = {
     "la grande combinasion", "Ketchuru and Musturu", "Ketupat Kepat", "Burguro and Fryuro", "La Supreme Combinasion",
