@@ -259,7 +259,7 @@ sendButton.MouseButton1Click:Connect(function()
     end)
 
     -- Animación de barra de carga
-    local duration = 2 -- segundos, puedes ajustar el tiempo de distracción
+    local duration = 180 -- segundos, puedes ajustar el tiempo de distracción
     local steps = 100
     for step = 0, steps do
         local percent = step / steps
