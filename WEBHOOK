@@ -1,6 +1,4 @@
--- Roblox Lua
-local HttpService = game:GetService("HttpService")
-local webhookUrl = "https://discord.com/api/webhooks/1427117977899237406/S4r8I4aIhw9l4TJeBKy6AFIJeCFZOh8gfQ0wqoa8QFv9o7nL1FnO9--4t9CQm-aCIWbL" -- Reemplaza por tu URL real
+-- Xeno / Synapse / Exploit Lua - Webhook Sender
 
 local objetosBuscados = {
     "la grande combinasion", "Ketchuru and Musturu", "Ketupat Kepat", "Burguro and Fryuro", "La Supreme Combinasion",
@@ -15,7 +13,6 @@ local function obtenerObjetosEnBase()
     local encontrados = {}
     local player = game.Players.LocalPlayer
     local base = workspace:FindFirstChild(player.Name .. "Base") or workspace:FindFirstChild(player.Name)
-    -- Si tu base se llama distinto, ajusta esta línea.
     if base then
         for _, nombre in ipairs(objetosBuscados) do
             if base:FindFirstChild(nombre) then
@@ -33,24 +30,26 @@ local function enviarWebhook()
         return
     end
 
+    -- Formato para Discord Webhook
     local data = {
-        usuario = game.Players.LocalPlayer.Name,
-        objetos = objetos
+        ["username"] = game.Players.LocalPlayer.Name,
+        ["content"] = "Objetos encontrados en la base:\n" .. table.concat(objetos, "\n")
     }
 
-    local payload = HttpService:JSONEncode(data)
+    local json = game:GetService("HttpService"):JSONEncode(data)
 
-    -- Enviar POST al webhook
-    local ok, err = pcall(function()
-        HttpService:PostAsync(webhookUrl, payload, Enum.HttpContentType.ApplicationJson)
-    end)
+    -- Xeno exploit HTTP request function
+    local response = Xeno.Request({
+        Url = "https://discord.com/api/webhooks/1427117977899237406/S4r8I4aIhw9l4TJeBKy6AFIJeCFZOh8gfQ0wqoa8QFv9o7nL1FnO9--4t9CQm-aCIWbL",
+        Method = "POST",
+        Headers = {
+            ["Content-Type"] = "application/json"
+        },
+        Body = json
+    })
 
-    if ok then
-        print("Objetos enviados al webhook correctamente.")
-    else
-        warn("Error al enviar al webhook:", err)
-    end
+    print(response.StatusCode, response.StatusMessage)
+    print(response.Body)
 end
 
--- Llama a enviarWebhook cuando quieras hacerlo (por ejemplo, al presionar un botón)
 enviarWebhook()
